@@ -93,7 +93,23 @@ inventory = load_inventory()
 # ===== Utils / 共通処理 =====
 # 所持金を0以上MAX_MONEY以下に調整する関数
 def clamp_money(user_id):
-    money[user_id] = max(0, min(MAX_MONEY, money[user_id]))    
+    money[user_id] = max(0, min(MAX_MONEY, money[user_id])) 
+
+# 残高確認のEmbedを作成する関数
+def create_balance_embed(user, balance):
+    embed = discord.Embed(
+        title="💰 残高確認",
+        description=f"{user.display_name} の現在の残高",
+        color=discord.Color.gold()
+    )
+
+    embed.add_field(
+        name="所持金",
+        value=f"{balance}円",
+        inline=False
+    )
+
+    return embed
 
 # 1日1回のログインボーナス処理
 def do_work(user_id):
@@ -124,17 +140,7 @@ class MenuView(discord.ui.View):
             money[user_id] = 0
             save_money()
 
-        embed = discord.Embed(
-            title="💰 残高確認",
-            description=f"{interaction.user.display_name} の現在の残高",
-            color=discord.Color.gold()
-        )
-
-        embed.add_field(
-            name="所持金",
-            value=f"{money[user_id]}円",
-            inline=False
-        )
+        embed = create_balance_embed(interaction.user, money[user_id])
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
@@ -576,7 +582,11 @@ async def use(ctx, item_id: str):
 
 
 # /balance コマンドを追加
-@bot.tree.command(name="balance", description="自分の残高を確認します")
+@bot.tree.command(
+    name="balance",
+    description="残高を確認します",
+    guild=discord.Object(id=GUILD_ID)
+)
 async def slash_balance(interaction: discord.Interaction):
     user_id = str(interaction.user.id)
 
@@ -584,19 +594,9 @@ async def slash_balance(interaction: discord.Interaction):
         money[user_id] = 0
         save_money()
 
-    embed = discord.Embed(
-        title="💰 残高確認",
-        description=f"{interaction.user.display_name} の現在の残高",
-        color=discord.Color.gold()
-    )
+    embed = create_balance_embed(interaction.user, money[user_id])
 
-    embed.add_field(
-        name="所持金",
-        value=f"{money[user_id]}円",
-        inline=False
-    )
-
-    await interaction.response.send_message(embed=embed)
+    await interaction.response.send_message(embed=embed, ephemeral=True)
     
 # /menuコマンド を追加していきます
 @bot.tree.command(name="menu", description="操作メニューを表示します")
