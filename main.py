@@ -6,6 +6,10 @@ import random
 import math
 from datetime import datetime
 from discord import app_commands
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # ===== Bot Settings (Bot設定) =====
 intents = discord.Intents.default()
@@ -625,7 +629,8 @@ async def menu(interaction: discord.Interaction):
 # ここから下に エラーハンドリング を追加していきます
 # これより上に エラーハンドリング を追加していきます
 
-bot.run("TOKEN_HERE")
+TOKEN = os.getenv("DISCORD_TOKEN")
+bot.run(TOKEN)
 
 
 
