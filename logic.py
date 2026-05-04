@@ -1,9 +1,11 @@
+# ===== Imports / ライブラリ =====
 from datetime import datetime
 import random
 
 from storage import save_json
 from config import MAX_MONEY
 
+# ===== Logic / ロジック =====
 def clamp_money(money, user_id):
     money[user_id] = max(0, min(MAX_MONEY, money[user_id]))
 

@@ -326,5 +326,61 @@
     "balance_after": 82470,
     "admin_id": null,
     "timestamp": "2026-05-04 21:16:42"
+  },
+  {
+    "user_id": "1067754791423447092",
+    "action": "work",
+    "amount": 100,
+    "balance_after": 100,
+    "admin_id": null,
+    "timestamp": "2026-05-04 22:18:35"
+  },
+  {
+    "user_id": "1067754791423447092",
+    "action": "gacha",
+    "amount": 0,
+    "balance_after": 100,
+    "admin_id": null,
+    "timestamp": "2026-05-04 22:18:41"
+  },
+  {
+    "user_id": "1067754791423447092",
+    "action": "addmoney",
+    "amount": 10000,
+    "balance_after": 10100,
+    "admin_id": "1381978030041468928",
+    "timestamp": "2026-05-04 22:19:00"
+  },
+  {
+    "user_id": "1067754791423447092",
+    "action": "addmoney",
+    "amount": 1000000,
+    "balance_after": 1010100,
+    "admin_id": "1381978030041468928",
+    "timestamp": "2026-05-04 22:19:21"
+  },
+  {
+    "user_id": "1381978030041468928",
+    "action": "gacha",
+    "amount": -50,
+    "balance_after": 82420,
+    "admin_id": null,
+    "timestamp": "2026-05-04 22:58:06"
+  },
+  {
+    "user_id": "1381978030041468928",
+    "action": "buy:coffee",
+    "amount": -300,
+    "balance_after": 82120,
+    "admin_id": null,
+    "timestamp": "2026-05-04 22:58:18"
+  },
+  {
+    "user_id": "1381978030041468928",
+    "action": "use:coffee",
+    "amount": 50,
+    "balance_after": 82170,
+    "admin_id": null,
+    "timestamp": "2026-05-04 22:58:26"
   }
 ]

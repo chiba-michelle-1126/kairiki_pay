@@ -1,7 +1,7 @@
 # ===== Imports / ライブラリ =====
 import json
 
-
+# ===== Storage / ストレージ =====
 def load_json(filename, default):
     try:
         with open(filename, "r", encoding="utf-8") as f:
