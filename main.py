@@ -291,8 +291,7 @@ async def on_ready():
 
 # ===== Commands / コマンド =====
 # ここから下に !コマンド を追加していきます
-
-
+# /コマンドが使えないバグが発生した時のための保険として、まずは !コマンド を実装しておきます
 #残高を確認するコマンド
 @bot.command()
 async def balance(ctx):
@@ -311,6 +310,49 @@ async def balance(ctx):
 
     embed.add_field(
         name="所持金",
+        value=f"{money[user_id]}円",
+        inline=False
+    )
+
+    await ctx.send(embed=embed)
+
+#1日1回ログインボーナスがもらえるコマンド
+@bot.command()
+async def work(ctx):
+    user_id = str(ctx.author.id)
+    today = datetime.now().date().isoformat()
+
+    # 初回対策
+    if user_id not in money:
+        money[user_id] = 0
+
+    # 今日もう使ってるかチェック
+    if user_id in last_work and last_work[user_id] == today:
+        await ctx.send("今日はもう働いてるよ！また明日ね。")
+        return
+
+    # 実行
+    money[user_id] += 100
+    clamp_money(user_id)
+    save_money()
+
+    last_work[user_id] = today
+    save_last_work()
+
+    embed = discord.Embed(
+        title="💼 お仕事完了！",
+        description=f"{ctx.author.display_name} が働きました",
+        color=discord.Color.green()
+    )
+
+    embed.add_field(
+        name="💰 獲得金額",
+        value="100円",
+        inline=False
+    )
+
+    embed.add_field(
+        name="🏦 現在の残高",
         value=f"{money[user_id]}円",
         inline=False
     )
