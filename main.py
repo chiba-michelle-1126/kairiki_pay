@@ -130,8 +130,55 @@ def do_work(user_id):
 
     return True, money[user_id]
 
+# ガチャ処理
+def do_gacha(user_id):
+    if user_id not in money:
+        money[user_id] = 0
+
+    cost = 100
+
+    if money[user_id] < cost:
+        return False, None, None, money[user_id]
+
+    money[user_id] -= cost
+
+    prizes = [
+        ("大当たり！", 500),
+        ("当たり！", 200),
+        ("普通", 100),
+        ("ちょいハズレ", 50),
+        ("ハズレ", 10)
+    ]
+
+    result_name, reward = random.choices(
+        prizes,
+        weights=[2, 8, 30, 40, 20]
+    )[0]
+
+    money[user_id] += reward
+    clamp_money(user_id)
+    save_money()
+
+    return True, result_name, reward, money[user_id]
+
+
+# ガチャ結果のEmbedを作る
+def create_gacha_embed(user, result_name, reward, balance):
+    embed = discord.Embed(
+        title="🎲 ガチャ結果",
+        description=f"{user.display_name} がガチャを引きました！",
+        color=discord.Color.purple()
+    )
+
+    embed.add_field(name="結果", value=result_name, inline=False)
+    embed.add_field(name="獲得金額", value=f"{reward}円", inline=True)
+    embed.add_field(name="現在の残高", value=f"{balance}円", inline=True)
+
+    return embed
+
 # ===== UI Classes / UIクラス=====
 class MenuView(discord.ui.View):
+    # 残高確認ボタンが押されたときの処理
     @discord.ui.button(label="残高確認", style=discord.ButtonStyle.primary)
     async def balance_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         user_id = str(interaction.user.id)
@@ -144,6 +191,7 @@ class MenuView(discord.ui.View):
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
+    # 仕事ボタンが押されたときの処理
     @discord.ui.button(label="仕事する", style=discord.ButtonStyle.success)
     async def work_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         user_id = str(interaction.user.id)
@@ -177,53 +225,25 @@ class MenuView(discord.ui.View):
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
+    # ガチャボタンが押されたときの処理
     @discord.ui.button(label="ガチャ", style=discord.ButtonStyle.danger)
     async def gacha_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         user_id = str(interaction.user.id)
 
-        if user_id not in money:
-            money[user_id] = 0
+        success, result_name, reward, balance = do_gacha(user_id)
 
-        cost = 100
-
-        if money[user_id] < cost:
+        if not success:
             await interaction.response.send_message(
                 "ガチャを引くには100円必要です",
                 ephemeral=True
             )
             return
 
-        money[user_id] -= cost
-
-        prizes = [
-            ("大当たり！", 500),
-            ("当たり！", 200),
-            ("普通", 100),
-            ("ちょいハズレ", 50),
-            ("ハズレ", 10)
-        ]
-
-        result_name, reward = random.choices(
-            prizes,
-            weights=[2, 8, 30, 40, 20]
-        )[0]
-
-        money[user_id] += reward
-        clamp_money(user_id)
-        save_money()
-
-        embed = discord.Embed(
-            title="🎲 ガチャ結果",
-            description=f"{interaction.user.display_name} がガチャを引きました！",
-            color=discord.Color.purple()
-        )
-
-        embed.add_field(name="結果", value=result_name, inline=False)
-        embed.add_field(name="獲得金額", value=f"{reward}円", inline=True)
-        embed.add_field(name="現在の残高", value=f"{money[user_id]}円", inline=True)
+        embed = create_gacha_embed(interaction.user, result_name, reward, balance)
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
-        
+
+    # ショップボタンが押されたときの処理    
     @discord.ui.button(label="ショップ", style=discord.ButtonStyle.secondary)
     async def shop_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         embed = discord.Embed(
@@ -655,14 +675,12 @@ async def menu(interaction: discord.Interaction):
         ephemeral=True 
     )
 
-# 開発用
+# /work コマンドを追加
 @bot.tree.command(
     name="work",
     description="1日1回ログインボーナスを受け取ります",
     guild=discord.Object(id=GUILD_ID)
 )
-# 本番用にする時は ↓ これを消す
-# guild=discord.Object(id=GUILD_ID)
 
 async def slash_work(interaction: discord.Interaction):
     user_id = str(interaction.user.id)
@@ -686,7 +704,28 @@ async def slash_work(interaction: discord.Interaction):
     embed.add_field(name="🏦 現在の残高", value=f"{balance}円", inline=False)
 
     await interaction.response.send_message(embed=embed, ephemeral=True)
-# これより上に /コマンド を追加していきます
+
+# /gacha コマンドを追加
+@bot.tree.command(
+    name="gacha",
+    description="100円でガチャを引きます",
+    guild=discord.Object(id=GUILD_ID)
+)
+async def slash_gacha(interaction: discord.Interaction):
+    user_id = str(interaction.user.id)
+
+    success, result_name, reward, balance = do_gacha(user_id)
+
+    if not success:
+        await interaction.response.send_message(
+            "ガチャを引くには100円必要です",
+            ephemeral=True
+        )
+        return
+
+    embed = create_gacha_embed(interaction.user, result_name, reward, balance)
+
+    await interaction.response.send_message(embed=embed, ephemeral=True)
 
 # ここから下に エラーハンドリング を追加していきます
 # これより上に エラーハンドリング を追加していきます
