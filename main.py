@@ -11,13 +11,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+TOKEN = os.getenv("DISCORD_TOKEN")
+GUILD_ID = int(os.getenv("GUILD_ID"))
+
 # ===== Bot Settings (Bot設定) =====
 intents = discord.Intents.default()
 intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# ===== Load / Save Functions =====
+# ===== Load / Save Functions (データの読み込み・保存用の関数)=====
 # データを「読み込む処理」
 def load_money():
     try:
@@ -92,6 +95,24 @@ inventory = load_inventory()
 def clamp_money(user_id):
     money[user_id] = max(0, min(MAX_MONEY, money[user_id]))    
 
+# 1日1回のログインボーナス処理
+def do_work(user_id):
+    today = datetime.now().date().isoformat()
+
+    if user_id not in money:
+        money[user_id] = 0
+
+    if user_id in last_work and last_work[user_id] == today:
+        return False, money[user_id]
+
+    money[user_id] += 100
+    clamp_money(user_id)
+    save_money()
+
+    last_work[user_id] = today
+    save_last_work()
+
+    return True, money[user_id]
 
 # ===== UI Classes / UIクラス=====
 class MenuView(discord.ui.View):
@@ -244,9 +265,18 @@ class MenuView(discord.ui.View):
 
 # ===== Events / イベント =====
 # スラッシュコマンドを有効にするためのイベント
+# 本番用にする時は ↓ これ
+"""
 @bot.event
 async def setup_hook():
     await bot.tree.sync()
+"""    
+
+# 開発用にする時は ↓ これ
+@bot.event
+async def setup_hook():
+    guild = discord.Object(id=GUILD_ID)
+    await bot.tree.sync(guild=guild)
     
 # BOT起動時に動くイベント関数
 @bot.event
@@ -256,48 +286,6 @@ async def on_ready():
 # ===== Commands / コマンド =====
 # ここから下に !コマンド を追加していきます
 
-#1日1回ログインボーナスがもらえるコマンド
-@bot.command()
-async def work(ctx):
-    user_id = str(ctx.author.id)
-    today = datetime.now().date().isoformat()
-
-    # 初回対策
-    if user_id not in money:
-        money[user_id] = 0
-
-    # 今日もう使ってるかチェック
-    if user_id in last_work and last_work[user_id] == today:
-        await ctx.send("今日はもう働いてるよ！また明日ね。")
-        return
-
-    # 実行
-    money[user_id] += 100
-    clamp_money(user_id)
-    save_money()
-
-    last_work[user_id] = today
-    save_last_work()
-
-    embed = discord.Embed(
-        title="💼 お仕事完了！",
-        description=f"{ctx.author.display_name} が働きました",
-        color=discord.Color.green()
-    )
-
-    embed.add_field(
-        name="💰 獲得金額",
-        value="100円",
-        inline=False
-    )
-
-    embed.add_field(
-        name="🏦 現在の残高",
-        value=f"{money[user_id]}円",
-        inline=False
-    )
-
-    await ctx.send(embed=embed)
 
 #残高を確認するコマンド
 @bot.command()
@@ -624,12 +612,43 @@ async def menu(interaction: discord.Interaction):
         view=MenuView(),
         ephemeral=True 
     )
+
+# 開発用
+@bot.tree.command(
+    name="work",
+    description="1日1回ログインボーナスを受け取ります",
+    guild=discord.Object(id=GUILD_ID)
+)
+# 本番用にする時は ↓ これを消す
+# guild=discord.Object(id=GUILD_ID)
+
+async def slash_work(interaction: discord.Interaction):
+    user_id = str(interaction.user.id)
+
+    success, balance = do_work(user_id)
+
+    if not success:
+        await interaction.response.send_message(
+            "今日はもう働いてるよ！また明日ね。",
+            ephemeral=True
+        )
+        return
+
+    embed = discord.Embed(
+        title="💼 お仕事完了！",
+        description=f"{interaction.user.display_name} が働きました",
+        color=discord.Color.green()
+    )
+
+    embed.add_field(name="💰 獲得金額", value="100円", inline=False)
+    embed.add_field(name="🏦 現在の残高", value=f"{balance}円", inline=False)
+
+    await interaction.response.send_message(embed=embed, ephemeral=True)
 # これより上に /コマンド を追加していきます
 
 # ここから下に エラーハンドリング を追加していきます
 # これより上に エラーハンドリング を追加していきます
 
-TOKEN = os.getenv("DISCORD_TOKEN")
 bot.run(TOKEN)
 
 
