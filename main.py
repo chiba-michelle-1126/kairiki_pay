@@ -847,6 +847,8 @@ async def slash_buy(interaction: discord.Interaction, item_id: str):
 
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
+
+# --- ここから下に 管理者用コマンド を追加していきます----
 # /addmoney コマンドを追加（管理者用）
 @bot.tree.command(
     name="addmoney",
@@ -872,6 +874,41 @@ async def addmoney(interaction: discord.Interaction, member: discord.Member, amo
 
     await interaction.response.send_message(
         f"{member.display_name} に {amount}円追加しました。現在の残高: {money[user_id]}円",
+        ephemeral=True
+    )
+
+# /removemoney コマンドを追加（管理者用）
+@bot.tree.command(
+    name="removemoney",
+    description="指定したユーザーのお金を減らします",
+    guild=discord.Object(id=GUILD_ID)
+)
+async def removemoney(interaction: discord.Interaction, member: discord.Member, amount: int):
+    if not interaction.user.guild_permissions.administrator:
+        await interaction.response.send_message(
+            "権限がありません。",
+            ephemeral=True
+        )
+        return
+
+    if amount <= 0:
+        await interaction.response.send_message(
+            "1円以上を指定してください。",
+            ephemeral=True
+        )
+        return
+
+    user_id = str(member.id)
+
+    if user_id not in money:
+        money[user_id] = 0
+
+    money[user_id] -= amount
+    clamp_money(user_id)
+    save_money()
+
+    await interaction.response.send_message(
+        f"{member.display_name} から {amount}円減らしました。現在の残高: {money[user_id]}円",
         ephemeral=True
     )
 
