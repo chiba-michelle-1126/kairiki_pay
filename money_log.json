@@ -1,0 +1,34 @@
+[
+  {
+    "user_id": "1338356505879253012",
+    "action": "addmoney",
+    "amount": 10000,
+    "balance_after": 10100,
+    "admin_id": "1381978030041468928",
+    "timestamp": "2026-05-04 15:50:07"
+  },
+  {
+    "user_id": "1338356505879253012",
+    "action": "addmoney",
+    "amount": 10000,
+    "balance_after": 20100,
+    "admin_id": "1381978030041468928",
+    "timestamp": "2026-05-04 15:50:50"
+  },
+  {
+    "user_id": "1338356505879253012",
+    "action": "addmoney",
+    "amount": 10000,
+    "balance_after": 30100,
+    "admin_id": "1381978030041468928",
+    "timestamp": "2026-05-04 15:51:06"
+  },
+  {
+    "user_id": "1338356505879253012",
+    "action": "removemoney",
+    "amount": 5000,
+    "balance_after": 25100,
+    "admin_id": "1381978030041468928",
+    "timestamp": "2026-05-04 15:51:38"
+  }
+]

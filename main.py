@@ -21,7 +21,7 @@ intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 # ===== Load / Save Functions (データの読み込み・保存用の関数)=====
-# データを「読み込む処理」
+# お金データを「読み込む処理」
 def load_money():
     try:
         with open("money.json", "r", encoding="utf-8") as f:
@@ -29,10 +29,21 @@ def load_money():
     except FileNotFoundError:
         return {}
 
-# データを「保存する処理」
+# お金データを「保存する処理」
 def save_money():
     with open("money.json", "w", encoding="utf-8") as f:
         json.dump(money, f, ensure_ascii=False, indent=2)
+
+def load_money_log():
+    try:
+        with open("money_log.json", "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return []
+
+def save_money_log():
+    with open("money_log.json", "w", encoding="utf-8") as f:
+        json.dump(money_log, f, ensure_ascii=False, indent=2)
 
 # 最終使用日を「読み込む処理」
 def load_last_work():
@@ -84,6 +95,9 @@ SHOP_ITEMS = {
 # 実際の所持金データを読み込む
 money = load_money()
 
+# お金の増減ログを読み込む
+money_log = load_money_log()
+
 # 最終使用日データを読み込む
 last_work = load_last_work()
 
@@ -94,6 +108,20 @@ inventory = load_inventory()
 # 所持金を0以上MAX_MONEY以下に調整する関数
 def clamp_money(user_id):
     money[user_id] = max(0, min(MAX_MONEY, money[user_id])) 
+
+# お金の増減を記録する関数
+def add_money_log(user_id, action, amount, balance_after, admin_id=None):
+    log = {
+        "user_id": user_id,
+        "action": action,
+        "amount": amount,
+        "balance_after": balance_after,
+        "admin_id": admin_id,
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+
+    money_log.append(log)
+    save_money_log()
 
 # 残高確認のEmbedを作成する関数
 def create_balance_embed(user, balance):
@@ -872,6 +900,13 @@ async def addmoney(interaction: discord.Interaction, member: discord.Member, amo
     clamp_money(user_id)
     save_money()
 
+    add_money_log(
+        user_id=user_id,
+        action="addmoney",
+        amount=amount,
+        balance_after=money[user_id],
+        admin_id=str(interaction.user.id)
+    )
     await interaction.response.send_message(
         f"{member.display_name} に {amount}円追加しました。現在の残高: {money[user_id]}円",
         ephemeral=True
@@ -906,7 +941,15 @@ async def removemoney(interaction: discord.Interaction, member: discord.Member, 
     money[user_id] -= amount
     clamp_money(user_id)
     save_money()
-
+    
+    add_money_log(
+        user_id=user_id,
+        action="removemoney",
+        amount=amount,
+        balance_after=money[user_id],
+        admin_id=str(interaction.user.id)
+    )
+    
     await interaction.response.send_message(
         f"{member.display_name} から {amount}円減らしました。現在の残高: {money[user_id]}円",
         ephemeral=True
@@ -916,8 +959,6 @@ async def removemoney(interaction: discord.Interaction, member: discord.Member, 
 # これより上に エラーハンドリング を追加していきます
 
 bot.run(TOKEN)
-
-
 
 """
 /menuコマンド の確認
