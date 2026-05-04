@@ -392,14 +392,14 @@ class ShopView(discord.ui.View):
 
 # ===== Events / イベント =====
 # スラッシュコマンドを有効にするためのイベント
-# 本番用にする時は ↓ これ
+# グローバル用にする時は ↓ これ
 """
 @bot.event
 async def setup_hook():
     await bot.tree.sync()
 """    
 
-# 開発用にする時は ↓ これ
+# 開発用（特定のギルド用）にする時は ↓ これ
 @bot.event
 async def setup_hook():
     guild = discord.Object(id=GUILD_ID)
@@ -847,6 +847,33 @@ async def slash_buy(interaction: discord.Interaction, item_id: str):
 
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
+# /addmoney コマンドを追加（管理者用）
+@bot.tree.command(
+    name="addmoney",
+    description="指定したユーザーにお金を追加します",
+    guild=discord.Object(id=GUILD_ID)
+)
+async def addmoney(interaction: discord.Interaction, member: discord.Member, amount: int):
+    if not interaction.user.guild_permissions.administrator:
+        await interaction.response.send_message(
+            "権限がありません。",
+            ephemeral=True
+        )
+        return
+
+    user_id = str(member.id)
+
+    if user_id not in money:
+        money[user_id] = 0
+
+    money[user_id] += amount
+    clamp_money(user_id)
+    save_money()
+
+    await interaction.response.send_message(
+        f"{member.display_name} に {amount}円追加しました。現在の残高: {money[user_id]}円",
+        ephemeral=True
+    )
 
 # ここから下に エラーハンドリング を追加していきます
 # これより上に エラーハンドリング を追加していきます
