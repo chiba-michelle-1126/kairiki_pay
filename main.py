@@ -153,6 +153,13 @@ def do_work(user_id):
     clamp_money(user_id)
     save_money()
 
+    add_money_log(
+        user_id=user_id,
+        action="work",
+        amount=100,
+        balance_after=money[user_id]
+    )
+
     last_work[user_id] = today
     save_last_work()
 
@@ -186,6 +193,13 @@ def do_gacha(user_id):
     money[user_id] += reward
     clamp_money(user_id)
     save_money()
+
+    add_money_log(
+        user_id=user_id,
+        action="gacha",
+        amount=reward,
+        balance_after=money[user_id]
+    )
 
     return True, result_name, reward, money[user_id]
 
@@ -222,6 +236,13 @@ def do_buy(user_id, item_id):
     money[user_id] -= price
     clamp_money(user_id)
     save_money()
+
+    add_money_log(
+        user_id=user_id,
+        action=f"buy:{item_id}",
+        amount=-price,
+        balance_after=money[user_id]
+    )
 
     # インベントリ追加
     if user_id not in inventory:

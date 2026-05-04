@@ -30,5 +30,29 @@
     "balance_after": 25100,
     "admin_id": "1381978030041468928",
     "timestamp": "2026-05-04 15:51:38"
+  },
+  {
+    "user_id": "1381978030041468928",
+    "action": "gacha",
+    "amount": 100,
+    "balance_after": 20320,
+    "admin_id": null,
+    "timestamp": "2026-05-04 16:01:22"
+  },
+  {
+    "user_id": "1381978030041468928",
+    "action": "buy:ticket",
+    "amount": -1000,
+    "balance_after": 19320,
+    "admin_id": null,
+    "timestamp": "2026-05-04 16:02:01"
+  },
+  {
+    "user_id": "1381978030041468928",
+    "action": "buy:ticket",
+    "amount": -1000,
+    "balance_after": 18320,
+    "admin_id": null,
+    "timestamp": "2026-05-04 16:02:34"
   }
 ]
