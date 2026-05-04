@@ -8,7 +8,7 @@ from datetime import datetime
 from discord import app_commands
 from config import TOKEN, GUILD_ID, MAX_MONEY, SHOP_ITEMS
 from storage import load_json, save_json
-from logic import do_work, do_gacha, do_buy
+from logic import do_work, do_gacha, do_buy, do_use
 
 # ===== Bot Settings (Bot設定) =====
 intents = discord.Intents.default()
@@ -92,50 +92,6 @@ def create_buy_embed(user, item, balance):
     embed.add_field(name="残高", value=f"{balance}円", inline=True)
 
     return embed
-
-# アイテム使用の処理を作る
-def do_use(user_id, item_id):
-    if user_id not in inventory or item_id not in inventory[user_id] or inventory[user_id][item_id] <= 0:
-        return False, "そのアイテムを持っていません", None
-
-    # 1個消費
-    inventory[user_id][item_id] -= 1
-    save_json("inventory.json", inventory)
-
-    # 効果
-    if item_id == "coffee":
-        reward = 50
-        money[user_id] += reward
-        clamp_money(user_id)
-        save_json("money.json", money)
-
-        result = "☕ コーヒーを飲んで50円ゲット！"
-
-        # ログ
-        add_money_log(
-            user_id=user_id,
-            action="use:coffee",
-            amount=reward,
-            balance_after=money[user_id]
-        )
-
-    elif item_id == "ticket":
-        result = "🎫 チケットを使った！（今後ガチャ無料とかに使える）"
-        reward = 0
-
-    elif item_id == "crown":
-        result = "👑 王冠をかぶった！気分が上がった！"
-        reward = 0
-
-    else:
-        result = "何も起こらなかった…"
-        reward = 0
-
-    return True, result, {
-        "item_id": item_id,
-        "reward": reward,
-        "balance": money.get(user_id, 0)
-    }
 
 # アイテム使用のEmbedを作る
 def create_use_embed(user, result_text, data):
@@ -359,18 +315,26 @@ class UseView(discord.ui.View):
 
     @discord.ui.button(label="☕ コーヒーを使う", style=discord.ButtonStyle.primary)
     async def use_coffee(self, interaction: discord.Interaction, button: discord.ui.Button):
-        success, result_text, data = do_use(self.user_id, "coffee")
+        success, result_text, data = do_use(self.user_id, "coffee", money, inventory)
 
         if not success:
             await interaction.response.send_message(result_text, ephemeral=True)
             return
+
+        if data["reward"] != 0:
+            add_money_log(
+                user_id=self.user_id,
+                action="use:coffee",
+                amount=data["reward"],
+                balance_after=data["balance"]
+            )
 
         embed = create_use_embed(interaction.user, result_text, data)
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @discord.ui.button(label="🎫 チケットを使う", style=discord.ButtonStyle.primary)
     async def use_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
-        success, result_text, data = do_use(self.user_id, "ticket")
+        success, result_text, data = do_use(self.user_id, "ticket", money, inventory)
 
         if not success:
             await interaction.response.send_message(result_text, ephemeral=True)
@@ -378,10 +342,10 @@ class UseView(discord.ui.View):
 
         embed = create_use_embed(interaction.user, result_text, data)
         await interaction.response.send_message(embed=embed, ephemeral=True)
-    
+
     @discord.ui.button(label="👑 王冠を使う", style=discord.ButtonStyle.primary)
     async def use_crown(self, interaction: discord.Interaction, button: discord.ui.Button):
-        success, result_text, data = do_use(self.user_id, "crown")
+        success, result_text, data = do_use(self.user_id, "crown", money, inventory)
 
         if not success:
             await interaction.response.send_message(result_text, ephemeral=True)
@@ -389,7 +353,6 @@ class UseView(discord.ui.View):
 
         embed = create_use_embed(interaction.user, result_text, data)
         await interaction.response.send_message(embed=embed, ephemeral=True)
-
 # ===== Events / イベント =====
 # スラッシュコマンドを有効にするためのイベント
 # グローバル用にする時は ↓ これ
@@ -905,11 +868,19 @@ async def slash_inventory(interaction: discord.Interaction):
 async def slash_use(interaction: discord.Interaction, item_id: str):
     user_id = str(interaction.user.id)
 
-    success, result_text, data = do_use(user_id, item_id)
+    success, result_text, data = do_use(user_id, item_id, money, inventory)
 
     if not success:
         await interaction.response.send_message(result_text, ephemeral=True)
         return
+
+    if data["reward"] != 0:
+        add_money_log(
+            user_id=user_id,
+            action=f"use:{item_id}",
+            amount=data["reward"],
+            balance_after=data["balance"]
+        )
 
     embed = create_use_embed(interaction.user, result_text, data)
 

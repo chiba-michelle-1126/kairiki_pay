@@ -294,5 +294,37 @@
     "balance_after": 82270,
     "admin_id": null,
     "timestamp": "2026-05-04 20:42:51"
+  },
+  {
+    "user_id": "1381978030041468928",
+    "action": "use:coffee",
+    "amount": 50,
+    "balance_after": 82320,
+    "admin_id": null,
+    "timestamp": "2026-05-04 21:10:39"
+  },
+  {
+    "user_id": "1381978030041468928",
+    "action": "use:coffee",
+    "amount": 50,
+    "balance_after": 82370,
+    "admin_id": null,
+    "timestamp": "2026-05-04 21:11:18"
+  },
+  {
+    "user_id": "1381978030041468928",
+    "action": "use:coffee",
+    "amount": 50,
+    "balance_after": 82420,
+    "admin_id": null,
+    "timestamp": "2026-05-04 21:13:16"
+  },
+  {
+    "user_id": "1381978030041468928",
+    "action": "use:coffee",
+    "amount": 50,
+    "balance_after": 82470,
+    "admin_id": null,
+    "timestamp": "2026-05-04 21:16:42"
   }
 ]

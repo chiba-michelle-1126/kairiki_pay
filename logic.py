@@ -85,3 +85,42 @@ def do_buy(user_id, item_id, money, inventory, shop_items):
     save_json("inventory.json", inventory)
 
     return True, item, money[user_id]
+
+# アイテム使用のロジック
+def do_use(user_id, item_id, money, inventory):
+    if user_id not in inventory or item_id not in inventory[user_id] or inventory[user_id][item_id] <= 0:
+        return False, "そのアイテムを持っていません", None
+
+    inventory[user_id][item_id] -= 1
+    save_json("inventory.json", inventory)
+
+    if user_id not in money:
+        money[user_id] = 0
+
+    if item_id == "coffee":
+        reward = 50
+        money[user_id] += reward
+        clamp_money(money, user_id)
+        save_json("money.json", money)
+
+        result = "☕ コーヒーを飲んで50円ゲット！"
+
+    elif item_id == "ticket":
+        reward = 0
+        result = "🎫 チケットを使った！（今後ガチャ無料などに使える）"
+
+    elif item_id == "crown":
+        reward = 0
+        result = "👑 王冠をかぶった！気分が上がった！"
+
+    else:
+        reward = 0
+        result = "何も起こらなかった…"
+
+    data = {
+        "item_id": item_id,
+        "reward": reward,
+        "balance": money[user_id]
+    }
+
+    return True, result, data
