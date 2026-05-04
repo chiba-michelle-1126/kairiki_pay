@@ -896,6 +896,40 @@ async def slash_buy(interaction: discord.Interaction, item_id: str):
 
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
+@bot.tree.command(
+    name="use",
+    description="アイテムを使用します",
+    guild=discord.Object(id=GUILD_ID)
+)
+async def use_item(interaction: discord.Interaction, item_id: str):
+    user_id = str(interaction.user.id)
+
+    if user_id not in inventory or item_id not in inventory[user_id] or inventory[user_id][item_id] <= 0:
+        await interaction.response.send_message("そのアイテムを持っていません", ephemeral=True)
+        return
+
+    # 1個消費
+    inventory[user_id][item_id] -= 1
+    save_inventory()
+
+    # 効果（例）
+    if item_id == "coffee":
+        money[user_id] += 50
+        clamp_money(user_id)
+        save_money()
+
+        result = "☕ コーヒーを飲んで50円ゲット！"
+
+    elif item_id == "ticket":
+        result = "🎫 チケットを使った！（まだ効果なし）"
+
+    elif item_id == "crown":
+        result = "👑 王冠をかぶった！（特に効果なし）"
+
+    else:
+        result = "何も起こらなかった…"
+
+    await interaction.response.send_message(result, ephemeral=True)
 
 # --- ここから下に 管理者用コマンド を追加していきます----
 # /addmoney コマンドを追加（管理者用）
