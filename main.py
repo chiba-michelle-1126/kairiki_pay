@@ -8,7 +8,7 @@ from datetime import datetime
 from discord import app_commands
 from config import TOKEN, GUILD_ID, MAX_MONEY, SHOP_ITEMS
 from storage import load_json, save_json
-from logic import do_work
+from logic import do_work, do_gacha
 
 # ===== Bot Settings (Bot設定) =====
 intents = discord.Intents.default()
@@ -65,45 +65,6 @@ def create_balance_embed(user, balance):
     )
 
     return embed
-
-# ガチャ処理
-def do_gacha(user_id):
-    if user_id not in money:
-        money[user_id] = 0
-
-    cost = 100
-
-    if money[user_id] < cost:
-        return False, None, None, money[user_id]
-
-    money[user_id] -= cost
-
-    prizes = [
-        ("大当たり！", 500),
-        ("当たり！", 200),
-        ("普通", 100),
-        ("ちょいハズレ", 50),
-        ("ハズレ", 10)
-    ]
-
-    result_name, reward = random.choices(
-        prizes,
-        weights=[2, 8, 30, 40, 20]
-    )[0]
-
-    money[user_id] += reward
-    clamp_money(user_id)
-    save_json("money.json", money)  
-
-    add_money_log(
-        user_id=user_id,
-        action="gacha",
-        amount=reward,
-        balance_after=money[user_id]
-    )
-
-    return True, result_name, reward, money[user_id]
-
 
 # ガチャ結果のEmbedを作る
 def create_gacha_embed(user, result_name, reward, balance):
@@ -283,7 +244,7 @@ class MenuView(discord.ui.View):
     async def gacha_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         user_id = str(interaction.user.id)
 
-        success, result_name, reward, balance = do_gacha(user_id)
+        success, result_name, reward, balance = do_gacha(user_id, money)
 
         if not success:
             await interaction.response.send_message(
@@ -291,7 +252,13 @@ class MenuView(discord.ui.View):
                 ephemeral=True
             )
             return
-
+        
+        add_money_log(
+            user_id=user_id,
+            action="gacha",
+            amount=reward - 100,
+            balance_after=balance
+        )
         embed = create_gacha_embed(interaction.user, result_name, reward, balance)
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -867,7 +834,7 @@ async def slash_work(interaction: discord.Interaction):
 async def slash_gacha(interaction: discord.Interaction):
     user_id = str(interaction.user.id)
 
-    success, result_name, reward, balance = do_gacha(user_id)
+    success, result_name, reward, balance = do_gacha(user_id, money)
 
     if not success:
         await interaction.response.send_message(
@@ -876,6 +843,12 @@ async def slash_gacha(interaction: discord.Interaction):
         )
         return
 
+    add_money_log(
+        user_id=user_id,
+        action="gacha",
+        amount=reward - 100,
+        balance_after=balance
+    )
     embed = create_gacha_embed(interaction.user, result_name, reward, balance)
 
     await interaction.response.send_message(embed=embed, ephemeral=True)

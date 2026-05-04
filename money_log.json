@@ -166,5 +166,21 @@
     "balance_after": 15970,
     "admin_id": null,
     "timestamp": "2026-05-04 18:43:14"
+  },
+  {
+    "user_id": "1381978030041468928",
+    "action": "gacha",
+    "amount": 400,
+    "balance_after": 16370,
+    "admin_id": null,
+    "timestamp": "2026-05-04 19:43:20"
+  },
+  {
+    "user_id": "1381978030041468928",
+    "action": "gacha",
+    "amount": 100,
+    "balance_after": 16470,
+    "admin_id": null,
+    "timestamp": "2026-05-04 19:43:26"
   }
 ]
