@@ -176,6 +176,50 @@ def create_gacha_embed(user, result_name, reward, balance):
 
     return embed
 
+# アイテム購入のEmbedを作る
+def do_buy(user_id, item_id):
+    if item_id not in SHOP_ITEMS:
+        return False, "そのアイテムは存在しません", None
+
+    item = SHOP_ITEMS[item_id]
+    price = item["price"]
+
+    if user_id not in money:
+        money[user_id] = 0
+
+    if money[user_id] < price:
+        return False, "お金が足りません", None
+
+    # お金減らす
+    money[user_id] -= price
+    clamp_money(user_id)
+    save_money()
+
+    # インベントリ追加
+    if user_id not in inventory:
+        inventory[user_id] = {}
+
+    if item_id not in inventory[user_id]:
+        inventory[user_id][item_id] = 0
+
+    inventory[user_id][item_id] += 1
+    save_inventory()
+
+    return True, item, money[user_id]
+
+def create_buy_embed(user, item, balance):
+    embed = discord.Embed(
+        title="🛒 購入完了",
+        description=f"{user.display_name} が購入しました",
+        color=discord.Color.green()
+    )
+
+    embed.add_field(name="アイテム", value=item["name"], inline=False)
+    embed.add_field(name="価格", value=f"{item['price']}円", inline=True)
+    embed.add_field(name="残高", value=f"{balance}円", inline=True)
+
+    return embed
+
 # ===== UI Classes / UIクラス=====
 class MenuView(discord.ui.View):
     # 残高確認ボタンが押されたときの処理
@@ -726,6 +770,26 @@ async def slash_gacha(interaction: discord.Interaction):
     embed = create_gacha_embed(interaction.user, result_name, reward, balance)
 
     await interaction.response.send_message(embed=embed, ephemeral=True)
+
+# /buy コマンドを追加
+@bot.tree.command(
+    name="buy",
+    description="アイテムを購入します",
+    guild=discord.Object(id=GUILD_ID)
+)
+async def slash_buy(interaction: discord.Interaction, item_id: str):
+    user_id = str(interaction.user.id)
+
+    success, result, balance = do_buy(user_id, item_id)
+
+    if not success:
+        await interaction.response.send_message(result, ephemeral=True)
+        return
+
+    embed = create_buy_embed(interaction.user, result, balance)
+
+    await interaction.response.send_message(embed=embed, ephemeral=True)
+
 
 # ここから下に エラーハンドリング を追加していきます
 # これより上に エラーハンドリング を追加していきます
