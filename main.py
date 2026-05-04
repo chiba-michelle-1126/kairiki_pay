@@ -7,6 +7,7 @@ import math
 from datetime import datetime
 from discord import app_commands
 from config import TOKEN, GUILD_ID, MAX_MONEY, SHOP_ITEMS
+from storage import load_json, save_json
 
 # ===== Bot Settings (Bot設定) =====
 intents = discord.Intents.default()
@@ -15,68 +16,19 @@ intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 # ===== Load / Save Functions (データの読み込み・保存用の関数)=====
-# お金データを「読み込む処理」
-def load_money():
-    try:
-        with open("money.json", "r", encoding="utf-8") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return {}
-
-# お金データを「保存する処理」
-def save_money():
-    with open("money.json", "w", encoding="utf-8") as f:
-        json.dump(money, f, ensure_ascii=False, indent=2)
-
-def load_money_log():
-    try:
-        with open("money_log.json", "r", encoding="utf-8") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return []
-
-def save_money_log():
-    with open("money_log.json", "w", encoding="utf-8") as f:
-        json.dump(money_log, f, ensure_ascii=False, indent=2)
-
-# 最終使用日を「読み込む処理」
-def load_last_work():
-    try:
-        with open("last_work.json", "r", encoding="utf-8") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return {}
-
-# 最終使用日を「保存する処理」
-def save_last_work():
-    with open("last_work.json", "w", encoding="utf-8") as f:
-        json.dump(last_work, f, ensure_ascii=False, indent=2)
-
-# アイテム所持データを読み込む処理
-def load_inventory():
-    try:
-        with open("inventory.json", "r", encoding="utf-8") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return {}
-
-#アイテム所持データを保存する処理
-def save_inventory():
-    with open("inventory.json", "w", encoding="utf-8") as f:
-        json.dump(inventory, f, ensure_ascii=False, indent=2)
 
 # ===== State / 状態データ =====
 # 実際の所持金データを読み込む
-money = load_money()
+money = load_json("money.json", {})
 
 # お金の増減ログを読み込む
-money_log = load_money_log()
+money_log = load_json("money_log.json", [])
 
 # 最終使用日データを読み込む
-last_work = load_last_work()
+last_work = load_json("last_work.json", {})
 
 # アイテム所持データを読み込む
-inventory = load_inventory()
+inventory = load_json("inventory.json", {})
 
 # ===== Utils / 共通処理 =====
 # 所持金を0以上MAX_MONEY以下に調整する関数
@@ -95,7 +47,7 @@ def add_money_log(user_id, action, amount, balance_after, admin_id=None):
     }
 
     money_log.append(log)
-    save_money_log()
+    save_json("money_log.json", money_log)
 
 # 残高確認のEmbedを作成する関数
 def create_balance_embed(user, balance):
@@ -125,7 +77,7 @@ def do_work(user_id):
 
     money[user_id] += 100
     clamp_money(user_id)
-    save_money()
+    save_json("money.json", money)
 
     add_money_log(
         user_id=user_id,
@@ -135,7 +87,7 @@ def do_work(user_id):
     )
 
     last_work[user_id] = today
-    save_last_work()
+    save_json("last_work.json", last_work)
 
     return True, money[user_id]
 
@@ -166,7 +118,7 @@ def do_gacha(user_id):
 
     money[user_id] += reward
     clamp_money(user_id)
-    save_money()
+    save_json("money.json", money)  
 
     add_money_log(
         user_id=user_id,
@@ -209,7 +161,7 @@ def do_buy(user_id, item_id):
     # お金減らす
     money[user_id] -= price
     clamp_money(user_id)
-    save_money()
+    save_json("money.json", money)
 
     add_money_log(
         user_id=user_id,
@@ -226,7 +178,7 @@ def do_buy(user_id, item_id):
         inventory[user_id][item_id] = 0
 
     inventory[user_id][item_id] += 1
-    save_inventory()
+    save_json("inventory.json", inventory)
 
     return True, item, money[user_id]
 
@@ -250,14 +202,14 @@ def do_use(user_id, item_id):
 
     # 1個消費
     inventory[user_id][item_id] -= 1
-    save_inventory()
+    save_json("inventory.json", inventory)
 
     # 効果
     if item_id == "coffee":
         reward = 50
         money[user_id] += reward
         clamp_money(user_id)
-        save_money()
+        save_json("money.json", money)
 
         result = "☕ コーヒーを飲んで50円ゲット！"
 
@@ -313,7 +265,7 @@ class MenuView(discord.ui.View):
 
         if user_id not in money:
             money[user_id] = 0
-            save_money()
+            save_json("money.json", money)
 
         embed = create_balance_embed(interaction.user, money[user_id])
 
@@ -337,10 +289,10 @@ class MenuView(discord.ui.View):
 
         money[user_id] += 100
         clamp_money(user_id)
-        save_money()
+        save_json("money.json", money)
 
         last_work[user_id] = today
-        save_last_work()
+        save_json("last_work.json", last_work)
 
         embed = discord.Embed(
             title="💼 お仕事完了！",
@@ -548,7 +500,7 @@ async def balance(ctx):
     if user_id not in money:
         money[user_id] = 0
         clamp_money(user_id)
-        save_money()
+        save_json("money.json", money)
 
     embed = discord.Embed(
         title="💰 残高確認",
@@ -582,11 +534,11 @@ async def work(ctx):
     # 実行
     money[user_id] += 100
     clamp_money(user_id)
-    save_money()
+    save_json("money.json", money)
 
     last_work[user_id] = today
-    save_last_work()
-
+    save_json("last_work.json", last_work)
+    
     embed = discord.Embed(
         title="💼 お仕事完了！",
         description=f"{ctx.author.display_name} が働きました",
@@ -630,7 +582,7 @@ async def pay(ctx, member: discord.Member, amount: int):
     money[receiver_id] += amount
     clamp_money(sender_id)
     clamp_money(receiver_id)
-    save_money()
+    save_json("money.json", money)
 
     await ctx.send(
         f"{ctx.author.display_name} から {member.display_name} に {amount}円送金しました！"
@@ -689,7 +641,7 @@ async def gacha(ctx):
 
     money[user_id] += reward
     clamp_money(user_id)
-    save_money()
+    save_json("money.json", money)
 
     embed = discord.Embed(
         title="🎲 ガチャ結果",
@@ -758,7 +710,7 @@ async def buy(ctx, item_id: str):
 
     money[user_id] -= price
     clamp_money(user_id)
-    save_money()
+    save_json("money.json", money)
 
     # アイテム追加
     if user_id not in inventory:
@@ -768,7 +720,7 @@ async def buy(ctx, item_id: str):
         inventory[user_id][item_id] = 0
 
     inventory[user_id][item_id] += 1
-    save_inventory()
+    save_json("inventory.json", inventory)
 
     embed = discord.Embed(
         title="🛍️ 購入完了",
@@ -829,8 +781,8 @@ async def use(ctx, item_id: str):
         money[user_id] += 50
         clamp_money(user_id)
 
-        save_inventory()
-        save_money()
+        save_json("inventory.json", inventory)
+        save_json("money.json", money)
 
         await ctx.send(f"☕ コーヒーを使いました！50円回復。現在の残高: {money[user_id]}円")
 
@@ -853,8 +805,8 @@ async def use(ctx, item_id: str):
         money[user_id] += reward
         clamp_money(user_id)
 
-        save_inventory()
-        save_money()
+        save_json("inventory.json", inventory)
+        save_json("money.json", money)
 
         await ctx.send(
             f"🎫 ガチャチケットを使いました！\n"
@@ -882,7 +834,7 @@ async def slash_balance(interaction: discord.Interaction):
 
     if user_id not in money:
         money[user_id] = 0
-        save_money()
+        save_json("money.json", money)
 
     embed = create_balance_embed(interaction.user, money[user_id])
 
@@ -1029,6 +981,42 @@ async def slash_use(interaction: discord.Interaction, item_id: str):
 
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
+# --- ここから下に 管理者用コマンド を追加していきます----
+# /addmoney コマンドを追加（管理者用）
+@bot.tree.command(
+    name="addmoney",
+    description="指定したユーザーにお金を追加します",
+    guild=discord.Object(id=GUILD_ID)
+)
+async def addmoney(interaction: discord.Interaction, member: discord.Member, amount: int):
+    if not interaction.user.guild_permissions.administrator:
+        await interaction.response.send_message(
+            "権限がありません。",
+            ephemeral=True
+        )
+        return
+
+    user_id = str(member.id)
+
+    if user_id not in money:
+        money[user_id] = 0
+
+    money[user_id] += amount
+    clamp_money(user_id)
+    save_json("money_log.json", money_log)
+
+    add_money_log(
+        user_id=user_id,
+        action="addmoney",
+        amount=amount,
+        balance_after=money[user_id],
+        admin_id=str(interaction.user.id)
+    )
+    await interaction.response.send_message(
+        f"{member.display_name} に {amount}円追加しました。現在の残高: {money[user_id]}円",
+        ephemeral=True
+    )
+
 # /removemoney コマンドを追加（管理者用）
 @bot.tree.command(
     name="removemoney",
@@ -1057,7 +1045,7 @@ async def removemoney(interaction: discord.Interaction, member: discord.Member, 
 
     money[user_id] -= amount
     clamp_money(user_id)
-    save_money()
+    save_json("money.json", money)
     
     add_money_log(
         user_id=user_id,

@@ -78,5 +78,93 @@
     "balance_after": 8470,
     "admin_id": null,
     "timestamp": "2026-05-04 16:42:11"
+  },
+  {
+    "user_id": "1381978030041468928",
+    "action": "gacha",
+    "amount": 50,
+    "balance_after": 8420,
+    "admin_id": null,
+    "timestamp": "2026-05-04 18:02:08"
+  },
+  {
+    "user_id": "1381978030041468928",
+    "action": "buy:coffee",
+    "amount": -300,
+    "balance_after": 8120,
+    "admin_id": null,
+    "timestamp": "2026-05-04 18:02:20"
+  },
+  {
+    "user_id": "1381978030041468928",
+    "action": "buy:coffee",
+    "amount": -300,
+    "balance_after": 7820,
+    "admin_id": null,
+    "timestamp": "2026-05-04 18:02:35"
+  },
+  {
+    "user_id": "1381978030041468928",
+    "action": "buy:coffee",
+    "amount": -300,
+    "balance_after": 7520,
+    "admin_id": null,
+    "timestamp": "2026-05-04 18:04:23"
+  },
+  {
+    "user_id": "1381978030041468928",
+    "action": "gacha",
+    "amount": 50,
+    "balance_after": 7470,
+    "admin_id": null,
+    "timestamp": "2026-05-04 18:20:47"
+  },
+  {
+    "user_id": "1381978030041468928",
+    "action": "buy:coffee",
+    "amount": -300,
+    "balance_after": 7170,
+    "admin_id": null,
+    "timestamp": "2026-05-04 18:20:56"
+  },
+  {
+    "user_id": "1381978030041468928",
+    "action": "buy:ticket",
+    "amount": -1000,
+    "balance_after": 6170,
+    "admin_id": null,
+    "timestamp": "2026-05-04 18:21:23"
+  },
+  {
+    "user_id": "1381978030041468928",
+    "action": "use:coffee",
+    "amount": 50,
+    "balance_after": 6220,
+    "admin_id": null,
+    "timestamp": "2026-05-04 18:21:35"
+  },
+  {
+    "user_id": "1381978030041468928",
+    "action": "use:coffee",
+    "amount": 50,
+    "balance_after": 6270,
+    "admin_id": null,
+    "timestamp": "2026-05-04 18:23:03"
+  },
+  {
+    "user_id": "1381978030041468928",
+    "action": "addmoney",
+    "amount": 10000,
+    "balance_after": 16270,
+    "admin_id": "1381978030041468928",
+    "timestamp": "2026-05-04 18:41:34"
+  },
+  {
+    "user_id": "1381978030041468928",
+    "action": "buy:coffee",
+    "amount": -300,
+    "balance_after": 15970,
+    "admin_id": null,
+    "timestamp": "2026-05-04 18:43:14"
   }
 ]
