@@ -56,3 +56,32 @@ def do_gacha(user_id, money):
     save_json("money.json", money)
 
     return True, result_name, reward, money[user_id]
+
+# アイテム購入のロジック
+def do_buy(user_id, item_id, money, inventory, shop_items):
+    if item_id not in shop_items:
+        return False, "そのアイテムは存在しません", None
+
+    item = shop_items[item_id]
+    price = item["price"]
+
+    if user_id not in money:
+        money[user_id] = 0
+
+    if money[user_id] < price:
+        return False, "お金が足りません", None
+
+    money[user_id] -= price
+    clamp_money(money, user_id)
+    save_json("money.json", money)
+
+    if user_id not in inventory:
+        inventory[user_id] = {}
+
+    if item_id not in inventory[user_id]:
+        inventory[user_id][item_id] = 0
+
+    inventory[user_id][item_id] += 1
+    save_json("inventory.json", inventory)
+
+    return True, item, money[user_id]

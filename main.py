@@ -8,7 +8,7 @@ from datetime import datetime
 from discord import app_commands
 from config import TOKEN, GUILD_ID, MAX_MONEY, SHOP_ITEMS
 from storage import load_json, save_json
-from logic import do_work, do_gacha
+from logic import do_work, do_gacha, do_buy
 
 # ===== Bot Settings (Bot設定) =====
 intents = discord.Intents.default()
@@ -79,44 +79,6 @@ def create_gacha_embed(user, result_name, reward, balance):
     embed.add_field(name="現在の残高", value=f"{balance}円", inline=True)
 
     return embed
-
-# アイテム購入の処理を作る
-def do_buy(user_id, item_id):
-    if item_id not in SHOP_ITEMS:
-        return False, "そのアイテムは存在しません", None
-
-    item = SHOP_ITEMS[item_id]
-    price = item["price"]
-
-    if user_id not in money:
-        money[user_id] = 0
-
-    if money[user_id] < price:
-        return False, "お金が足りません", None
-
-    # お金減らす
-    money[user_id] -= price
-    clamp_money(user_id)
-    save_json("money.json", money)
-
-    add_money_log(
-        user_id=user_id,
-        action=f"buy:{item_id}",
-        amount=-price,
-        balance_after=money[user_id]
-    )
-
-    # インベントリ追加
-    if user_id not in inventory:
-        inventory[user_id] = {}
-
-    if item_id not in inventory[user_id]:
-        inventory[user_id][item_id] = 0
-
-    inventory[user_id][item_id] += 1
-    save_json("inventory.json", inventory)
-
-    return True, item, money[user_id]
 
 def create_buy_embed(user, item, balance):
     embed = discord.Embed(
@@ -322,11 +284,18 @@ class ShopView(discord.ui.View):
     async def buy_coffee(self, interaction: discord.Interaction, button: discord.ui.Button):
         user_id = str(interaction.user.id)
 
-        success, result, balance = do_buy(user_id, "coffee")
+        success, result, balance = do_buy(user_id, "coffee", money, inventory, SHOP_ITEMS)
 
         if not success:
             await interaction.response.send_message(result, ephemeral=True)
             return
+
+        add_money_log(
+            user_id=user_id,
+            action="buy:coffee",
+            amount=-result["price"],
+            balance_after=balance
+        )
 
         embed = create_buy_embed(interaction.user, result, balance)
         await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -335,12 +304,17 @@ class ShopView(discord.ui.View):
     async def buy_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
         user_id = str(interaction.user.id)
 
-        success, result, balance = do_buy(user_id, "ticket")
+        success, result, balance = do_buy(user_id, "ticket", money, inventory, SHOP_ITEMS)
 
         if not success:
             await interaction.response.send_message(result, ephemeral=True)
             return
-
+        add_money_log(
+            user_id=user_id,
+            action="buy:ticket",
+            amount=-result["price"],
+            balance_after=balance
+        )
         embed = create_buy_embed(interaction.user, result, balance)
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
@@ -348,12 +322,19 @@ class ShopView(discord.ui.View):
     async def buy_crown(self, interaction: discord.Interaction, button: discord.ui.Button):
         user_id = str(interaction.user.id)
 
-        success, result, balance = do_buy(user_id, "crown")
+        success, result, balance = do_buy(user_id, "crown", money, inventory, SHOP_ITEMS)
 
         if not success:
             await interaction.response.send_message(result, ephemeral=True)
             return
 
+        add_money_log(
+            user_id=user_id,
+            action="buy:crown",
+            amount=-result["price"],
+            balance_after=balance
+        )
+        
         embed = create_buy_embed(interaction.user, result, balance)
         await interaction.response.send_message(embed=embed, ephemeral=True)        
 
@@ -762,7 +743,7 @@ async def use(ctx, item_id: str):
         await ctx.send("そのアイテムは使用できません。")
 # これより上に !コマンド を追加していきます
 
-
+# ここから下に /コマンド を追加していきます
 # /balance コマンドを追加
 @bot.tree.command(
     name="balance",
@@ -862,12 +843,19 @@ async def slash_gacha(interaction: discord.Interaction):
 async def slash_buy(interaction: discord.Interaction, item_id: str):
     user_id = str(interaction.user.id)
 
-    success, result, balance = do_buy(user_id, item_id)
+    success, result, balance = do_buy(user_id, item_id, money, inventory, SHOP_ITEMS)
 
     if not success:
         await interaction.response.send_message(result, ephemeral=True)
         return
 
+    add_money_log(
+        user_id=user_id,
+        action=f"buy:{item_id}",
+        amount=-result["price"],
+        balance_after=balance
+    )
+    
     embed = create_buy_embed(interaction.user, result, balance)
 
     await interaction.response.send_message(embed=embed, ephemeral=True)
