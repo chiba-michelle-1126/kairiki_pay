@@ -218,7 +218,7 @@ def create_gacha_embed(user, result_name, reward, balance):
 
     return embed
 
-# アイテム購入のEmbedを作る
+# アイテム購入の処理を作る
 def do_buy(user_id, item_id):
     if item_id not in SHOP_ITEMS:
         return False, "そのアイテムは存在しません", None
@@ -266,6 +266,67 @@ def create_buy_embed(user, item, balance):
     embed.add_field(name="アイテム", value=item["name"], inline=False)
     embed.add_field(name="価格", value=f"{item['price']}円", inline=True)
     embed.add_field(name="残高", value=f"{balance}円", inline=True)
+
+    return embed
+
+# アイテム使用の処理を作る
+def do_use(user_id, item_id):
+    if user_id not in inventory or item_id not in inventory[user_id] or inventory[user_id][item_id] <= 0:
+        return False, "そのアイテムを持っていません", None
+
+    # 1個消費
+    inventory[user_id][item_id] -= 1
+    save_inventory()
+
+    # 効果
+    if item_id == "coffee":
+        reward = 50
+        money[user_id] += reward
+        clamp_money(user_id)
+        save_money()
+
+        result = "☕ コーヒーを飲んで50円ゲット！"
+
+        # ログ
+        add_money_log(
+            user_id=user_id,
+            action="use:coffee",
+            amount=reward,
+            balance_after=money[user_id]
+        )
+
+    elif item_id == "ticket":
+        result = "🎫 チケットを使った！（今後ガチャ無料とかに使える）"
+        reward = 0
+
+    elif item_id == "crown":
+        result = "👑 王冠をかぶった！気分が上がった！"
+        reward = 0
+
+    else:
+        result = "何も起こらなかった…"
+        reward = 0
+
+    return True, result, {
+        "item_id": item_id,
+        "reward": reward,
+        "balance": money.get(user_id, 0)
+    }
+
+# アイテム使用のEmbedを作る
+def create_use_embed(user, result_text, data):
+    embed = discord.Embed(
+        title="🎁 アイテム使用",
+        description=f"{user.display_name} がアイテムを使用しました",
+        color=discord.Color.orange()
+    )
+
+    embed.add_field(name="結果", value=result_text, inline=False)
+
+    if data["reward"] != 0:
+        embed.add_field(name="獲得金額", value=f"{data['reward']}円", inline=True)
+
+    embed.add_field(name="現在の残高", value=f"{data['balance']}円", inline=True)
 
     return embed
 
@@ -360,6 +421,7 @@ class MenuView(discord.ui.View):
             ephemeral=True
         )
 
+# 所持アイテムボタンが押されたときの処理
     @discord.ui.button(label="所持アイテム", style=discord.ButtonStyle.secondary)
     async def inventory_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         user_id = str(interaction.user.id)
@@ -382,7 +444,11 @@ class MenuView(discord.ui.View):
                 inline=False
             )
 
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.response.send_message(
+            embed=embed,
+            view=UseView(user_id),
+            ephemeral=True
+        )
 
 # ショップボタンが押されたときの処理
 class ShopView(discord.ui.View):
@@ -438,6 +504,44 @@ class ShopView(discord.ui.View):
             view=MenuView(),
             ephemeral=True
         )
+
+class UseView(discord.ui.View):
+    def __init__(self, user_id):
+        super().__init__()
+        self.user_id = user_id
+
+    @discord.ui.button(label="☕ コーヒーを使う", style=discord.ButtonStyle.primary)
+    async def use_coffee(self, interaction: discord.Interaction, button: discord.ui.Button):
+        success, result_text, data = do_use(self.user_id, "coffee")
+
+        if not success:
+            await interaction.response.send_message(result_text, ephemeral=True)
+            return
+
+        embed = create_use_embed(interaction.user, result_text, data)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    @discord.ui.button(label="🎫 チケットを使う", style=discord.ButtonStyle.primary)
+    async def use_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
+        success, result_text, data = do_use(self.user_id, "ticket")
+
+        if not success:
+            await interaction.response.send_message(result_text, ephemeral=True)
+            return
+
+        embed = create_use_embed(interaction.user, result_text, data)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+    
+    @discord.ui.button(label="👑 王冠を使う", style=discord.ButtonStyle.primary)
+    async def use_crown(self, interaction: discord.Interaction, button: discord.ui.Button):
+        success, result_text, data = do_use(self.user_id, "crown")
+
+        if not success:
+            await interaction.response.send_message(result_text, ephemeral=True)
+            return
+
+        embed = create_use_embed(interaction.user, result_text, data)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 # ===== Events / イベント =====
 # スラッシュコマンドを有効にするためのイベント
@@ -896,76 +1000,60 @@ async def slash_buy(interaction: discord.Interaction, item_id: str):
 
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
+# /inventory コマンドを追加
+@bot.tree.command(
+    name="inventory",
+    description="所持アイテムを確認します",
+    guild=discord.Object(id=GUILD_ID)
+)
+async def slash_inventory(interaction: discord.Interaction):
+    user_id = str(interaction.user.id)
+
+    if user_id not in inventory or not inventory[user_id]:
+        await interaction.response.send_message(
+            "何も持っていません。",
+            ephemeral=True
+        )
+        return
+
+    embed = discord.Embed(
+        title="🎒 所持アイテム",
+        description=f"{interaction.user.display_name} のアイテム一覧",
+        color=discord.Color.blue()
+    )
+
+    for item_id, count in inventory[user_id].items():
+        item_name = SHOP_ITEMS[item_id]["name"]
+        embed.add_field(
+            name=item_name,
+            value=f"{count}個",
+            inline=False
+        )
+
+    await interaction.response.send_message(
+        embed=embed,
+        view=UseView(user_id),
+        ephemeral=True
+    )
+
+# /use コマンドを追加
 @bot.tree.command(
     name="use",
     description="アイテムを使用します",
     guild=discord.Object(id=GUILD_ID)
 )
-async def use_item(interaction: discord.Interaction, item_id: str):
+async def slash_use(interaction: discord.Interaction, item_id: str):
     user_id = str(interaction.user.id)
 
-    if user_id not in inventory or item_id not in inventory[user_id] or inventory[user_id][item_id] <= 0:
-        await interaction.response.send_message("そのアイテムを持っていません", ephemeral=True)
+    success, result_text, data = do_use(user_id, item_id)
+
+    if not success:
+        await interaction.response.send_message(result_text, ephemeral=True)
         return
 
-    # 1個消費
-    inventory[user_id][item_id] -= 1
-    save_inventory()
+    embed = create_use_embed(interaction.user, result_text, data)
 
-    # 効果（例）
-    if item_id == "coffee":
-        money[user_id] += 50
-        clamp_money(user_id)
-        save_money()
-
-        result = "☕ コーヒーを飲んで50円ゲット！"
-
-    elif item_id == "ticket":
-        result = "🎫 チケットを使った！（まだ効果なし）"
-
-    elif item_id == "crown":
-        result = "👑 王冠をかぶった！（特に効果なし）"
-
-    else:
-        result = "何も起こらなかった…"
-
-    await interaction.response.send_message(result, ephemeral=True)
-
-# --- ここから下に 管理者用コマンド を追加していきます----
-# /addmoney コマンドを追加（管理者用）
-@bot.tree.command(
-    name="addmoney",
-    description="指定したユーザーにお金を追加します",
-    guild=discord.Object(id=GUILD_ID)
-)
-async def addmoney(interaction: discord.Interaction, member: discord.Member, amount: int):
-    if not interaction.user.guild_permissions.administrator:
-        await interaction.response.send_message(
-            "権限がありません。",
-            ephemeral=True
-        )
-        return
-
-    user_id = str(member.id)
-
-    if user_id not in money:
-        money[user_id] = 0
-
-    money[user_id] += amount
-    clamp_money(user_id)
-    save_money()
-
-    add_money_log(
-        user_id=user_id,
-        action="addmoney",
-        amount=amount,
-        balance_after=money[user_id],
-        admin_id=str(interaction.user.id)
-    )
-    await interaction.response.send_message(
-        f"{member.display_name} に {amount}円追加しました。現在の残高: {money[user_id]}円",
-        ephemeral=True
-    )
+    await interaction.response.send_message(embed=embed, ephemeral=True)
 
 # /removemoney コマンドを追加（管理者用）
 @bot.tree.command(

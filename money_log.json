@@ -54,5 +54,29 @@
     "balance_after": 18320,
     "admin_id": null,
     "timestamp": "2026-05-04 16:02:34"
+  },
+  {
+    "user_id": "1381978030041468928",
+    "action": "use:coffee",
+    "amount": 50,
+    "balance_after": 18420,
+    "admin_id": null,
+    "timestamp": "2026-05-04 16:25:38"
+  },
+  {
+    "user_id": "1381978030041468928",
+    "action": "use:coffee",
+    "amount": 50,
+    "balance_after": 18470,
+    "admin_id": null,
+    "timestamp": "2026-05-04 16:32:38"
+  },
+  {
+    "user_id": "1381978030041468928",
+    "action": "buy:crown",
+    "amount": -10000,
+    "balance_after": 8470,
+    "admin_id": null,
+    "timestamp": "2026-05-04 16:42:11"
   }
 ]
