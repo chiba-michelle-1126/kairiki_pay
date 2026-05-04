@@ -305,7 +305,11 @@ class MenuView(discord.ui.View):
 
         embed.set_footer(text="購入方法: !buy アイテムID")
 
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.response.send_message(
+            embed=embed,
+            view=ShopView(),
+            ephemeral=True
+        )
 
 
     @discord.ui.button(label="所持アイテム", style=discord.ButtonStyle.secondary)
@@ -331,7 +335,47 @@ class MenuView(discord.ui.View):
             )
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
-        
+
+# ショップボタンが押されたときの処理
+class ShopView(discord.ui.View):
+    @discord.ui.button(label="コーヒーを買う", style=discord.ButtonStyle.primary)
+    async def buy_coffee(self, interaction: discord.Interaction, button: discord.ui.Button):
+        user_id = str(interaction.user.id)
+
+        success, result, balance = do_buy(user_id, "coffee")
+
+        if not success:
+            await interaction.response.send_message(result, ephemeral=True)
+            return
+
+        embed = create_buy_embed(interaction.user, result, balance)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    @discord.ui.button(label="ガチャチケットを買う", style=discord.ButtonStyle.primary)
+    async def buy_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
+        user_id = str(interaction.user.id)
+
+        success, result, balance = do_buy(user_id, "ticket")
+
+        if not success:
+            await interaction.response.send_message(result, ephemeral=True)
+            return
+
+        embed = create_buy_embed(interaction.user, result, balance)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    @discord.ui.button(label="王冠を買う", style=discord.ButtonStyle.primary)
+    async def buy_crown(self, interaction: discord.Interaction, button: discord.ui.Button):
+        user_id = str(interaction.user.id)
+
+        success, result, balance = do_buy(user_id, "crown")
+
+        if not success:
+            await interaction.response.send_message(result, ephemeral=True)
+            return
+
+        embed = create_buy_embed(interaction.user, result, balance)
+        await interaction.response.send_message(embed=embed, ephemeral=True)        
 
 # ===== Events / イベント =====
 # スラッシュコマンドを有効にするためのイベント
