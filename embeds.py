@@ -1,7 +1,7 @@
 # ===== Imports / ライブラリ =====
 import discord
 
-# ===== embeds / 埋め込み =====
+# ===== embeds / 埋め込み表示 =====
 # 残高確認のEmbedを作成する関数
 def create_balance_embed(user, balance):
     embed = discord.Embed(

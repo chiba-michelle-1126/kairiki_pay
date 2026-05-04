@@ -382,5 +382,45 @@
     "balance_after": 82170,
     "admin_id": null,
     "timestamp": "2026-05-04 22:58:26"
+  },
+  {
+    "user_id": "1381978030041468928",
+    "action": "use:coffee",
+    "amount": 50,
+    "balance_after": 82220,
+    "admin_id": null,
+    "timestamp": "2026-05-04 23:23:33"
+  },
+  {
+    "user_id": "1381978030041468928",
+    "action": "buy:coffee",
+    "amount": -300,
+    "balance_after": 81920,
+    "admin_id": null,
+    "timestamp": "2026-05-04 23:24:04"
+  },
+  {
+    "user_id": "1381978030041468928",
+    "action": "buy:ticket",
+    "amount": -1000,
+    "balance_after": 80920,
+    "admin_id": null,
+    "timestamp": "2026-05-04 23:24:14"
+  },
+  {
+    "user_id": "1381978030041468928",
+    "action": "buy:crown",
+    "amount": -10000,
+    "balance_after": 70920,
+    "admin_id": null,
+    "timestamp": "2026-05-04 23:24:23"
+  },
+  {
+    "user_id": "1381978030041468928",
+    "action": "use:coffee",
+    "amount": 50,
+    "balance_after": 70970,
+    "admin_id": null,
+    "timestamp": "2026-05-04 23:25:51"
   }
 ]

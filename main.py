@@ -15,6 +15,7 @@ from embeds import (
     create_buy_embed,
     create_use_embed,
 )
+from views import UseView
 
 # ===== Bot Settings (Bot設定) =====
 intents = discord.Intents.default()
