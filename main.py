@@ -8,6 +8,7 @@ from datetime import datetime
 from discord import app_commands
 from config import TOKEN, GUILD_ID, MAX_MONEY, SHOP_ITEMS
 from storage import load_json, save_json
+from logic import do_work
 
 # ===== Bot Settings (Bot設定) =====
 intents = discord.Intents.default()
@@ -64,32 +65,6 @@ def create_balance_embed(user, balance):
     )
 
     return embed
-
-# 1日1回のログインボーナス処理
-def do_work(user_id):
-    today = datetime.now().date().isoformat()
-
-    if user_id not in money:
-        money[user_id] = 0
-
-    if user_id in last_work and last_work[user_id] == today:
-        return False, money[user_id]
-
-    money[user_id] += 100
-    clamp_money(user_id)
-    save_json("money.json", money)
-
-    add_money_log(
-        user_id=user_id,
-        action="work",
-        amount=100,
-        balance_after=money[user_id]
-    )
-
-    last_work[user_id] = today
-    save_json("last_work.json", last_work)
-
-    return True, money[user_id]
 
 # ガチャ処理
 def do_gacha(user_id):
@@ -275,24 +250,22 @@ class MenuView(discord.ui.View):
     @discord.ui.button(label="仕事する", style=discord.ButtonStyle.success)
     async def work_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         user_id = str(interaction.user.id)
-        today = datetime.now().date().isoformat()
 
-        if user_id not in money:
-            money[user_id] = 0
+        success, balance = do_work(user_id, money, last_work)
 
-        if user_id in last_work and last_work[user_id] == today:
+        if not success:
             await interaction.response.send_message(
                 "今日はもう働きました。また明日ね。",
                 ephemeral=True
             )
             return
 
-        money[user_id] += 100
-        clamp_money(user_id)
-        save_json("money.json", money)
-
-        last_work[user_id] = today
-        save_json("last_work.json", last_work)
+        add_money_log(
+            user_id=user_id,
+            action="work",
+            amount=100,
+            balance_after=balance
+        )
 
         embed = discord.Embed(
             title="💼 お仕事完了！",
@@ -301,7 +274,7 @@ class MenuView(discord.ui.View):
         )
 
         embed.add_field(name="💰 獲得金額", value="100円", inline=False)
-        embed.add_field(name="🏦 現在の残高", value=f"{money[user_id]}円", inline=False)
+        embed.add_field(name="🏦 現在の残高", value=f"{balance}円", inline=False)
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
@@ -865,7 +838,7 @@ async def menu(interaction: discord.Interaction):
 async def slash_work(interaction: discord.Interaction):
     user_id = str(interaction.user.id)
 
-    success, balance = do_work(user_id)
+    success, balance = do_work(user_id, money, last_work)
 
     if not success:
         await interaction.response.send_message(
