@@ -6,13 +6,7 @@ import random
 import math
 from datetime import datetime
 from discord import app_commands
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
-
-TOKEN = os.getenv("DISCORD_TOKEN")
-GUILD_ID = int(os.getenv("GUILD_ID"))
+from config import TOKEN, GUILD_ID, MAX_MONEY, SHOP_ITEMS
 
 # ===== Bot Settings (Bot設定) =====
 intents = discord.Intents.default()
@@ -70,26 +64,6 @@ def load_inventory():
 def save_inventory():
     with open("inventory.json", "w", encoding="utf-8") as f:
         json.dump(inventory, f, ensure_ascii=False, indent=2)
-
-# ===== Config / 設定データ =====
-# 所持金の上限（インフレ防止・ゲームバランス調整）
-MAX_MONEY = 100000000
-
-# ショップの商品データ
-SHOP_ITEMS = {
-    "coffee": {
-        "name": "コーヒー",
-        "price": 300
-    },
-    "ticket": {
-        "name": "ガチャチケット",
-        "price": 1000
-    },
-    "crown": {
-        "name": "王冠",
-        "price": 10000
-    }
-}
 
 # ===== State / 状態データ =====
 # 実際の所持金データを読み込む
