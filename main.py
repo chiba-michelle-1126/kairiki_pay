@@ -311,7 +311,6 @@ class MenuView(discord.ui.View):
             ephemeral=True
         )
 
-
     @discord.ui.button(label="所持アイテム", style=discord.ButtonStyle.secondary)
     async def inventory_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         user_id = str(interaction.user.id)
@@ -376,6 +375,20 @@ class ShopView(discord.ui.View):
 
         embed = create_buy_embed(interaction.user, result, balance)
         await interaction.response.send_message(embed=embed, ephemeral=True)        
+
+    @discord.ui.button(label="メニューに戻る", style=discord.ButtonStyle.secondary)
+    async def back_to_menu(self, interaction: discord.Interaction, button: discord.ui.Button):
+        embed = discord.Embed(
+            title="📋 メニュー",
+            description="ボタンから操作できます",
+            color=discord.Color.blue()
+        )
+
+        await interaction.response.send_message(
+            embed=embed,
+            view=MenuView(),
+            ephemeral=True
+        )
 
 # ===== Events / イベント =====
 # スラッシュコマンドを有効にするためのイベント
